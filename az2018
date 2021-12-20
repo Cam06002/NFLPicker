@@ -1,0 +1,37 @@
+from bs4 import BeautifulSoup
+import requests
+import csv
+import pandas as pd
+
+
+# Cardinals 2018 Data URL's
+az_18_url = "https://www.pro-football-reference.com/teams/crd/2018.htm"
+az_18_r = requests.get(az_18_url)
+az_18_soup = BeautifulSoup(az_18_r.content, 'lxml')
+az_18_table = az_18_soup.find('table', id='games')
+
+# Get Columns
+az_18_headers = ['Day', 'Date', 'Time', 'Box', 'W/L', 'OT', 'Rec', 'H/AW', 'Opp', 'Team', 'Opp',
+                 '1stDO', 'TotYdO', 'PassYO', 'RushYO', 'TO', '1stDA', 'TotYdA', 'PassYA', 'RushYA',
+                 'TOF', 'OffenseEx', 'DefenseEx', 'SPtEx']
+
+az_18_data = pd.DataFrame(columns = az_18_headers)
+
+# Get row data
+for j in az_18_table.find_all('tr')[2:]:
+    row_data = j.find_all('td')
+    row = [i.text for i in row_data]
+    length = len(az_18_data)
+    az_18_data.loc[length] = row
+
+# Clean the data
+az_18_data.loc[az_18_data['H/AW'] == '', 'H/AW'] = 'Home'
+az_18_data.loc[az_18_data['H/AW'] == '@', 'H/AW'] = 'Away'
+
+az_18_data.drop('Box', inplace=True, axis=1)
+
+az_18_data['Week'] = az_18_data.reset_index().index
+az_18_data['Week'] = az_18_data['Week'] + 1
+
+# Create CSV
+az_18_data.to_csv('AZ_2018.csv', index=False)
