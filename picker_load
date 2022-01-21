@@ -1,94 +1,125 @@
 from bs4 import BeautifulSoup
 import requests
-import csv
 import pandas as pd
+from google.cloud import bigquery
+import os
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'pickernfl.json'
 
 
-# url modifier list
-mod_url = ['crd/2018', 'crd/2019', 'crd/2020', 'crd/2021',
-           'atl/2018', 'atl/2019', 'atl/2020', 'atl/2021',
-           'rav/2018', 'rav/2019', 'rav/2020', 'rav/2021',
-           'buf/2018', 'buf/2019', 'buf/2020', 'buf/2021',
-           'car/2018', 'car/2019', 'car/2020', 'car/2021',
-           'chi/2018', 'chi/2019', 'chi/2020', 'chi/2021',
-           'cin/2018', 'cin/2019', 'cin/2020', 'cin/2021',
-           'cle/2018', 'cle/2019', 'cle/2020', 'cle/2021',
-           'dal/2018', 'dal/2019', 'dal/2020', 'dal/2021',
-           'den/2018', 'den/2019', 'den/2020', 'den/2021',
-           'det/2018', 'det/2019', 'det/2020', 'det/2021',
-           'gnb/2018', 'gnb/2019', 'gnb/2020', 'gnb/2021',
-           'htx/2018', 'htx/2019', 'htx/2020', 'htx/2021',
-           'clt/2018', 'clt/2019', 'clt/2020', 'clt/2021',
-           'jax/2018', 'jax/2019', 'jax/2020', 'jax/2021',
-           'kan/2018', 'kan/2019', 'kan/2020', 'kan/2021',
-           'rai/2018', 'rai/2019', 'rai/2020', 'rai/2021',
-           'sdg/2018', 'sdg/2019', 'sdg/2020', 'sdg/2021',
-           'ram/2018', 'ram/2019', 'ram/2020', 'ram/2021',
-           'mia/2018', 'mia/2019', 'mia/2020', 'mia/2021',
-           'min/2018', 'min/2019', 'min/2020', 'min/2021',
-           'nwe/2018', 'nwe/2019', 'nwe/2020', 'nwe/2021',
-           'nor/2018', 'nor/2019', 'nor/2020', 'nor/2021',
-           'nyg/2018', 'nyg/2019', 'nyg/2020', 'nyg/2021',
-           'nyj/2018', 'nyj/2019', 'nyj/2020', 'nyj/2021',
-           'phi/2018', 'phi/2019', 'phi/2020', 'phi/2021',
-           'pit/2018', 'pit/2019', 'pit/2020', 'pit/2021',
-           'sfo/2018', 'sfo/2019', 'sfo/2020', 'sfo/2021',
-           'sea/2018', 'sea/2019', 'sea/2020', 'sea/2021',
-           'tam/2018', 'tam/2019', 'tam/2020', 'tam/2021',
-           'oti/2018', 'oti/2019', 'oti/2020', 'oti/2021',
-           'was/2018', 'was/2019', 'was/2020', 'was/2021'
-           ]
+# dictionary to modify URL scraped, and csv names
+                # AZ Cardinals
+team_dict = {'crd/2018': 'AZ_2018', 'crd/2019': 'AZ_2019',
+             'crd/2020': 'AZ_2020', 'crd/2021': 'AZ_2021',
+                # Atlanta Falcons
+             'atl/2018': 'atl_2018', 'atl/2019': 'atl_2019',
+             'atl/2020': 'atl_2020', 'atl/2021': 'atl_2021',
+                # Baltimore Ravens
+             'rav/2018': 'rav_2018', 'rav/2019': 'rav_2019',
+             'rav/2020': 'rav_2020', 'rav/2021': 'rav_2021',
+                # Buffalo Bills
+             'buf/2018': 'buf_2018', 'buf/2019': 'buf_2019',
+             'buf/2020': 'buf_2020', 'buf/2021': 'buf_2021',
+                # Carolina Panthers
+             'car/2018': 'car_2018', 'car/2019': 'car_2019',
+             'car/2020': 'car_2020', 'car/2021': 'car_2021',
+                # Chicago Bears
+             'chi/2018': 'chi_2018', 'chi/2019': 'chi_2019',
+             'chi/2020': 'chi_2020', 'chi/2021': 'chi_2021',
+                # Cincinnati Bengals
+             'cin/2018': 'cin_2018', 'cin/2019': 'cin_2019',
+             'cin/2020': 'cin_2020', 'cin/2021': 'cin_2021',
+                # Cleveland Browns
+             'cle/2018': 'cle_2018', 'cle/2019': 'cle_2019',
+             'cle/2020': 'cle_2020', 'cle/2021': 'cle_2021',
+                # Dallas Cowboys
+             'dal/2018': 'dal_2018', 'dal/2019': 'dal_2019',
+             'dal/2020': 'dal_2020', 'dal/2021': 'dal_2021',
+                # Denver Broncos
+             'den/2018': 'den_2018', 'den/2019': 'den_2019',
+             'den/2020': 'den_2020', 'den/2021': 'den_2021',
+                # Detroit Lions
+             'det/2018': 'det_2018', 'det/2019': 'det_2019',
+             'det/2020': 'det_2020', 'det/2021': 'det_2021',
+                # Green Bay Packers
+             'gnb/2018': 'gnb_2018', 'gnb/2019': 'gnb_2019',
+             'gnb/2020': 'gnb_2020', 'gnb/2021': 'gnb_2021',
+                # Houston Texans
+             'htx/2018': 'htx_2018', 'htx/2019': 'htx_2019',
+             'htx/2020': 'htx_2020', 'htx/2021': 'htx_2021',
+                # Indianapolis Colts
+             'clt/2018': 'clt_2018', 'clt/2019': 'clt_2019',
+             'clt/2020': 'clt_2020', 'clt/2021': 'clt_2021',
+                # Jacksonville Jaguars
+             'jax/2018': 'jax_2018', 'jax/2019': 'jax_2019',
+             'jax/2020': 'jax_2020', 'jax/2021': 'jax_2021',
+                # Kansas City Chiefs
+             'kan/2018': 'kan_2018', 'kan/2019': 'kan_2019',
+             'kan/2020': 'kan_2020', 'kan/2021': 'kan_2021',
+                # Oakland Raiders
+             'rai/2018': 'rai_2018', 'rai/2019': 'rai_2019',
+             'rai/2020': 'rai_2020', 'rai/2021': 'rai_2021',
+                # Los Angeles Chargers
+             'sdg/2018': 'sdg_2018', 'sdg/2019': 'sdg_2019',
+             'sdg/2020': 'sdg_2020', 'sdg/2021': 'sdg_2021',
+                # Los Angeles Rams
+             'ram/2018': 'ram_2018', 'ram/2019': 'ram_2019',
+             'ram/2020': 'ram_2020', 'ram/2021': 'ram_2021',
+                # Miami Dolphins
+             'mia/2018': 'mia_2018', 'mia/2019': 'mia_2019',
+             'mia/2020': 'mia_2020', 'mia/2021': 'mia_2021',
+                # Minnesota Vikings
+             'min/2018': 'min_2018', 'min/2019': 'min_2019',
+             'min/2020': 'min_2020', 'min/2021': 'min_2021',
+                # New England Patriots
+             'nwe/2018': 'nwe_2018', 'nwe/2019': 'nwe_2019',
+             'nwe/2020': 'nwe_2020', 'nwe/2021': 'nwe_2021',
+                # New Orleans Saints
+             'nor/2018': 'nor_2018', 'nor/2019': 'nor_2019',
+             'nor/2020': 'nor_2020', 'nor/2021': 'nor_2021',
+                # New York Giants
+             'nyg/2018': 'nyg_2018', 'nyg/2019': 'nyg_2019',
+             'nyg/2020': 'nyg_2020', 'nyg/2021': 'nyg_2021',
+                # New York Jets
+             'nyj/2018': 'nyj_2018', 'nyj/2019': 'nyj_2019',
+             'nyj/2020': 'nyj_2020', 'nyj/2021': 'nyj_2021',
+                # Philadelphia Eagles
+             'phi/2018': 'phi_2018', 'phi/2019': 'phi_2019',
+             'phi/2020': 'phi_2020', 'phi/2021': 'phi_2021',
+                # Pittsburgh Steelers
+             'pit/2018': 'pit_2018', 'pit/2019': 'pit_2019',
+             'pit/2020': 'pit_2020', 'pit/2021': 'pit_2021',
+                # San Francisco 49ers
+             'sfo/2018': 'sfo_2018', 'sfo/2019': 'sfo_2019',
+             'sfo/2020': 'sfo_2020', 'sfo/2021': 'sfo_2021',
+                # Seattle Seahawks
+             'sea/2018': 'sea_2018', 'sea/2019': 'sea_2019',
+             'sea/2020': 'sea_2020', 'sea/2021': 'sea_2021',
+                # Tampa Bay Buccaneers
+             'tam/2018': 'tam_2018', 'tam/2019': 'tam_2019',
+             'tam/2020': 'tam_2020', 'tam/2021': 'tam_2021',
+                # Tennessee Titans
+             'oti/2018': 'oti_2018', 'oti/2019': 'oti_2019',
+             'oti/2020': 'oti_2020', 'oti/2021': 'oti_2021',
+                # Washington Football Team
+             'was/2018': 'was_2018', 'was/2019': 'was_2019',
+             'was/2020': 'was_2020', 'was/2021': 'was_2021'
+             }
 
-# modifier list for csv builder
-mod_csv = ['AZ_2018', 'AZ_2019', 'AZ_2020', 'AZ_2021',
-           'atl_2018', 'atl_2019', 'atl_2020', 'atl_2021',
-           'rav_2018', 'rav_2019', 'rav_2020', 'rav_2021',
-           'buf_2018', 'buf_2019', 'buf_2020', 'buf_2021',
-           'car_2018', 'car_2019', 'car_2020', 'car_2021',
-           'chi_2018', 'chi_2019', 'chi_2020', 'chi_2021',
-           'cin_2018', 'cin_2019', 'cin_2020', 'cin_2021',
-           'cle_2018', 'cle_2019', 'cle_2020', 'cle_2021',
-           'dal_2018', 'dal_2019', 'dal_2020', 'dal_2021',
-           'den_2018', 'den_2019', 'den_2020', 'den_2021',
-           'det_2018', 'det_2019', 'det_2020', 'det_2021',
-           'gnb_2018', 'gnb_2019', 'gnb_2020', 'gnb_2021',
-           'htx_2018', 'htx_2019', 'htx_2020', 'htx_2021',
-           'clt_2018', 'clt_2019', 'clt_2020', 'clt_2021',
-           'jax_2018', 'jax_2019', 'jax_2020', 'jax_2021',
-           'kan_2018', 'kan_2019', 'kan_2020', 'kan_2021',
-           'rai_2018', 'rai_2019', 'rai_2020', 'rai_2021',
-           'sdg_2018', 'sdg_2019', 'sdg_2020', 'sdg_2021',
-           'ram_2018', 'ram_2019', 'ram_2020', 'ram_2021',
-           'mia_2018', 'mia_2019', 'mia_2020', 'mia_2021',
-           'min_2018', 'min_2019', 'min_2020', 'min_2021',
-           'nwe_2018', 'nwe_2019', 'nwe_2020', 'nwe_2021',
-           'nor_2018', 'nor_2019', 'nor_2020', 'nor_2021',
-           'nyg_2018', 'nyg_2019', 'nyg_2020', 'nyg_2021',
-           'nyj_2018', 'nyj_2019', 'nyj_2020', 'nyj_2021',
-           'phi_2018', 'phi_2019', 'phi_2020', 'phi_2021',
-           'pit_2018', 'pit_2019', 'pit_2020', 'pit_2021',
-           'sfo_2018', 'sfo_2019', 'sfo_2020', 'sfo_2021',
-           'sea_2018', 'sea_2019', 'sea_2020', 'sea_2021',
-           'tam_2018', 'tam_2019', 'tam_2020', 'tam_2021',
-           'oti_2018', 'oti_2019', 'oti_2020', 'oti_2021',
-           'was_2018', 'was_2019', 'was_2020', 'was_2021'
-           ]
+for url, name in team_dict.items():
 
-for index, url in enumerate(mod_url):
-    #Data URL's
-    modi = url
-    url = f"https://www.pro-football-reference.com/teams/{modi}.htm"
-    r = requests.get(url)
+    # Data URL's
+    web = f"https://www.pro-football-reference.com/teams/{url}.htm"
+    r = requests.get(web)
     soup = BeautifulSoup(r.content, 'lxml')
     table = soup.find('table', id='games')
-    modi = index + 1
 
     # Get Columns
-    headers = ['Day', 'Date', 'Time', 'Box', 'W/L', 'OT', 'Rec', 'H/AW', 'Opp', 'Team', 'Opp',
-                     '1stDO', 'TotYdO', 'PassYO', 'RushYO', 'TO', '1stDA', 'TotYdA', 'PassYA', 'RushYA',
-                     'TOF', 'OffenseEx', 'DefenseEx', 'SPtEx']
+    headers = ['Day', 'Date', 'Time', 'Box', 'W/L', 'OT', 'Rec', 'H/AW', 'Opp', 'TeamPoints', 'OppPoints',
+               'Firsts', 'TotYdO', 'PassYO', 'RushYO', 'TO', 'FirstsA', 'TotYdA', 'PassYA', 'RushYA',
+               'TOF', 'OffenseEx', 'DefenseEx', 'SPtEx']
 
-    data = pd.DataFrame(columns = headers)
+    data = pd.DataFrame(columns=headers)  # dataframe built with empty rows
 
     # Get row data
     for j in table.find_all('tr')[2:]:
@@ -106,12 +137,20 @@ for index, url in enumerate(mod_url):
     data['Week'] = data.reset_index().index
     data['Week'] = data['Week'] + 1
 
-for index, exl in enumerate(mod_csv):
-    # Create CSV
-    modcsv = exl
-    exl = f'{modcsv}.csv'
-    data.to_csv(exl, index=False)
+    # data to GCP BigQuery
+    file_path = f"{name}.parquet.gzip"
 
-    read = pd.read_csv(exl)
-    modcsv = index + 1
-    
+    data.reset_index().to_parquet(file_path, compression='gzip')
+    client = bigquery.Client()
+    table_id = f"pickernfl.game_results.{name}"
+
+    job_config = bigquery.LoadJobConfig(
+        source_format=bigquery.SourceFormat.PARQUET,
+        write_disposition="WRITE_TRUNCATE",
+        create_disposition="CREATE_IF_NEEDED"
+    )
+
+    with open(file_path, "rb") as source_file:
+        job = client.load_table_from_file(source_file, table_id, job_config=job_config)
+
+        job.result()
