@@ -1,0 +1,13 @@
+# SQL to create one master table with data from all existing tables
+
+CREATE TABLE `pickernfl.game_results.full_set`
+
+AS
+
+SELECT Year, Week, Team, Opp AS Opponent, H_AW as Location, W_L as Result, TeamPoints, OppPoints, 
+       TotYdO AS Team_Yards, Firsts as Team_Firsts, PassYO as Team_Pass_Yds,
+       RushYO as Team_Rush_Yds, `TO` as Team_TO, 
+       TotYdA as Opp_Yards, FirstsA as Opp_Firsts, PassYA as Opp_Pass_Yds,
+       RushYA as Opp_Rush_Yds, TOF as Opp_TO
+FROM `pickernfl.game_results.NFL*`
+ORDER BY Year, Week, Team;
