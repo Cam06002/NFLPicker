@@ -1,7 +1,7 @@
 # NFLPicker
 This project was created to demonstrate my ability to scrape data from the web, clean the data, and load the data into a cloud database for analytics.
 
-The first tassk here was to extract the data I needed from a reliable source. I found pro-football-reference.com to be a great site to get my data from as everything I needed was neatly organized in tables, and broken down by team and year. They had data avaialable for the years 2018-2021 for each team. To get the this data, I used requests and BeautifulSoup. This made it relatively easy to find the tags in the HTML code that corresponded to the data I was trying to collect. The steps here were as follows:
+The first task here was to extract the data I needed from a reliable source. I found pro-football-reference.com to be a great site to get my data from as everything I needed was neatly organized in tables, and broken down by team and year. They had data avaialable for the years 2018-2021 for each team. To get the this data, I used requests and BeautifulSoup. This made it relatively easy to find the tags in the HTML code that corresponded to the data I was trying to collect. The steps here were as follows:
 
  - Create a dictionary with key-value pairs for each team and year
  - Use a for loop to iterate over the dictionary to pull from each unique URL (team/year)
