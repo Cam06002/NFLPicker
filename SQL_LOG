@@ -11,3 +11,69 @@ SELECT Year, Week, Team, Opp AS Opponent, H_AW as Location, W_L as Result, TeamP
        RushYA as Opp_Rush_Yds, TOF as Opp_TO
 FROM `pickernfl.game_results.NFL*`
 ORDER BY Year, Week, Team;
+
+----------------------------------------------------------------------------------------------------
+
+# Getting rid of empty values by nullifying
+
+CREATE OR REPLACE TABLE `pickernfl.game_results.full_set` AS
+
+SELECT Year, Week, Team, Opponent, Location, 
+NULLIF(Result,'') AS Result, 
+W_L,
+
+NULLIF(TeamPoints,'') AS TeamPoints,
+NULLIF(OppPoints,'') AS  OppPoints,
+NULLIF(Team_Yards,'') AS  Team_Yards,
+NULLIF(Team_Pass_Yds,'') AS  Team_Pass_Yds,
+NULLIF(Team_Rush_Yds,'') AS Team_Rush_Yds,
+NULLIF(Team_Firsts,'') AS  Team_Firsts,
+NULLIF(Team_TO,'') AS  Team_TO,
+
+NULLIF(Opp_Yards,'') AS  Opp_Yards,
+NULLIF(Opp_Pass_Yds,'') AS  Opp_Pass_Yds,
+NULLIF(Opp_Rush_Yds,'') AS  Opp_Rush_Yds,
+NULLIF(Opp_Firsts,'') AS  Opp_Firsts,
+NULLIF(Opp_TO,'') AS  Opp_TO
+
+FROM `pickernfl.game_results.full_set`
+
+ORDER BY YEAR, Week, Team
+
+----------------------------------------------------------------------------------------
+
+# Changes to schema - Many columns were of the incorrect data type when uploaded with an auto-generated schema
+
+reate or replace table `pickernfl.game_results.full_set` AS
+
+SELECT Year, Week, Team, Opponent, Location, Result, W_L,
+
+CAST(TeamPoints as Integer) as TeamPoints,
+CAST(OppPoints as Integer) as OppPoints,
+CAST(Team_Yards as INTEGER) as Team_Yards,
+CAST(Team_Pass_Yds as INTEGER) as Team_Pass_Yds,
+CAST(Team_Rush_Yds as Integer) as Team_Rush_Yds,
+CAST(Team_Firsts as Integer) as Team_Firsts,
+CAST(Team_TO as Integer) as Team_TO,
+
+CAST(Opp_Yards as INTEGER) as Opp_Yards,
+CAST(Opp_Pass_Yds as INTEGER) as Opp_Pass_Yds,
+CAST(Opp_Rush_Yds as Integer) as Opp_Rush_Yds,
+CAST(Opp_Firsts as Integer) as Opp_Firsts,
+CAST(Opp_TO as Integer) as Opp_TO
+
+FROM `pickernfl.game_results.full_set`
+
+ORDER BY YEAR, Week, Team
+
+------------------------------------------------------------------------------
+
+# Creation of an expectations master table for future use with maching learning
+CREATE TABLE `pickernfl.game_results.full_set_exp`
+
+AS
+
+SELECT Year, Week, Team, Opp AS Opponent, H_AW as Location, W_L as Result, OffenseEx, DefenseEx, SPtEx
+FROM `pickernfl.game_results.NFL*`
+ORDER BY Year, Week, Team;
+
